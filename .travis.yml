@@ -1,0 +1,38 @@
+language: python
+
+dist: bionic
+
+python:
+  - 3.7
+
+install:
+  - pip install -r requirements.txt
+
+scripts:
+  - qgis-plugin-ci -v
+
+jobs:
+  include:
+    - stage: push-translation
+      if: branch = master AND type != pull_request
+      script: qgis-plugin-ci push-translation ${TX_TOKEN}
+
+    - stage: deploy
+      if: tag IS present AND type != pull_request
+      script:
+        - >
+          qgis-plugin-ci release ${TRAVIS_TAG}
+          --transifex-token ${TX_TOKEN}
+          --github-token ${GH_TOKEN}
+          --osgeo-username ${OSGEO_USERNAME}
+          --osgeo-password ${OSGEO_PASSWORD}
+
+env:
+  global:
+    - OSGEO_USERNAME=3nids
+    # OSGEO_PASSWORD
+    - secure: "FG1sDl6lT0TDVWje+1/utRvK/2UolsVCyySltSLfrWiLGLmk6nfM9LBcBs5/nZBxteKwstssnPzwAfJC/COvaKFru8zmwVKyxF3t05dToGd8PwyD+1uJtdN6zVeVOBhPmrf7gyofu+lD/b3RsZwxGdr7s8jH8mTRsRe9/C+3a92jjC+S6AtmvXlGitB7YhuHbIEWLYC8Le4uWRRaVtHRQyVBRyLVgbTYxTGM71MU3QmbYFxXDmD4RkiZchkOkwvkihtJ7cRrPREbf/EbK7IPpOU+xfRlb7DVseaifpL4faHWDeQhOtD2f+B/Urjd4RxV9W/bgahkhU8KBJzA9PSCHqVMaed8v9HDZ/p/r/noguaxND+pDxijJfo/1QFVUZMrNRQprzjECPM+cs5ocBVoyQAB8zZeBbXEdhdlIQMJ6GDAG7MHZCAtI87IRkNv422ew7EeMAxFO26fk9XvZf+92SljfFT5YKN7L6JjPzWs1mIYUNUKkIkPke5GMP+46UeXYVG8lb8diKBvhen3qDEJ5SzrBZ/bouEy1sV3szUUCs4Qh9mFhYZIasBcgjIn4hTfdvMr819vfxlDXxC04GC/0tvz4xHeoz7N2TunW2Lmmy3YL0UCsiWRzE3pnRIQGr4dV8IL79TZYgXYLAiFrEWXKbLC0jcxCZK/SNPGi2o0SUo="
+    # TX_TOKEN
+    - secure: "c/bMyxIPet9lshUaRVm0Ixcb2FccuBXcqvSv9DWWPwTXV9MjRJvCnWp3po7lqkHuYxVHxKIv8yLF1vKmRRyWeFh+sthVLLkvcX9nRz5T7iz2/z9xDIuAl6N1Go4mcjWfnr7mYnf/ibdDSwoHYED7C724Unbq5SdjAWYfqzWMk2zoGumpgSBVGABKUcy0P7EwVyeqHxrWo84dEpSqZk6Mk0tf07PJHvgzIPaHeiFuCMcIA0ejkwZ13r4NQiSEYm31/RfkdArh9xbD6VOcoyBZzdp6orDYNk0fAm4uYHogq99BhHWZYi3VbUfsm/sCPBtc5aM/hfGbc9mka6I/2JudSF/fy6V8rKePJub/P5oGl1UUtQpGTX6scldgr1JUjlByrbVo8qpjYCrvCKSkvlSJgEQe3Er8goj/1/kD7oxSCzn4cVAS2nr5lCJQFbHcdHJ0I93osBw0zUzW6T6FKUVoweA9blwmn2DA8H+GWDFdfZzio/arbpyAqtT0xVJ14uLRsap/6/yCsqcH95W3OFlB5le+6VKrOPeIjZd0MGUz2yyDYXNkIK4HsOrPkCVRFqQ7LqvtXeJ2xQGC+yx4AQKRJvM3Ahj5rfAenKbDpYuYsyRALIRGC5clLzK6to2qKtPE3a2Z2Kh8qCdnQg9yZzIByHJgcCPJRekQprAw65CDNdQ="
+    # GH_TOKEN
+    - secure: "T7WdGEgq8WQoFN+S51AQUlZ5dhbg06bKOi6j3/X/+l+rRgU6QsOXPPZRyPs9cwBDfgZi0nBa6hCw17xvjCsXOtsTxRLrrF/T5irNN7PaXpqdqDuxQmlfffuK69rkI5bhw9+EUzHmXPHAOmgzWcYcTbJCvK9Pa80V/TPQ/U/ErLk19E9nC3mYFVOSS6LdJBlqUUSIY0fNqo3DF3PuWzI4YiAaXMJNik+FtkxTG6XILmaEnEMX6n9Swo0CqQ6R+Za9YT0RuwVS3nZlMmIXjGsn51IUDswBL9TusyJNYopyQTbLu0yEJA43fO8/aogDc9v1sbEFnAwLjVGCKX07KC/VAVpDmP78/8MaTmQQiKUoM0xn6QTscJNHqujUbGVDo1wkFAZ+FpadZtUAO8BV6ZXJr8zmjoNZA2p40Glr9NKJkZfFKhZ9DuSN9oNzPmC/JQ8BeH3AXtQ+IXH98BFQ9Ix3dBO0ZxfCwR2ZJrUk2no2LoVcYMLf6F8bL2fk3NhUUTWvTyHxavtNAFF3EaSCZ2TTyE26CUS/LikHbixHu7hODWQM1mYjqxeRxKiXf2FbkAq7r+XTBa9eZ/XZApjSyouQg0jgtflKigwicoNi8Vvb5pwDGT3SfX9led994CcCuGOr0rk5ueRm082n83g0Busafyi6SkN2PBILx9PLQpA9CRw="
