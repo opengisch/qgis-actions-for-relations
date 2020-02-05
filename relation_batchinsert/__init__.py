@@ -16,5 +16,5 @@ def classFactory(iface):
     :type iface: QgsInterface
     """
     #
-    from relation_batchinsert.core.relation_batch_insert_plugin import RelationBatchInsertPlugin
+    from relation_batchinsert.relation_batch_insert_plugin import RelationBatchInsertPlugin
     return RelationBatchInsertPlugin(iface)

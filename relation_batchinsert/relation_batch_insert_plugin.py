@@ -10,7 +10,8 @@
 
 import os
 from qgis.PyQt.QtCore import QCoreApplication, QTranslator, QObject, QLocale, QSettings
-from qgis.core import QgsProject, QgsRelation, QgsFeature, QgsEditorWidgetSetup, QgsGeometry
+from qgis.PyQt.QtWidgets import QAction
+from qgis.core import QgsProject, QgsRelation, QgsFeature, QgsEditorWidgetSetup, QgsGeometry, QgsMapLayer, Qgis
 from qgis.gui import QgsGui, QgisInterface, QgsMapLayerAction
 
 DEBUG = True
@@ -23,7 +24,9 @@ class RelationBatchInsertPlugin(QObject):
     def __init__(self, iface: QgisInterface):
         QObject.__init__(self)
         self.iface = iface
-        self.mapLayerActions = {}
+        self.map_layer_actions = {}
+        # context menu entries
+        self.menu_actions = []
 
         QgsProject.instance().relationManager().changed.connect(self.load_relations)
         self.load_relations()
@@ -42,27 +45,44 @@ class RelationBatchInsertPlugin(QObject):
         self.unload_relations()
 
     def unload_relations(self):
-        for relation_id in self.mapLayerActions.keys():
-            QgsGui.instance().mapLayerActionRegistry().removeMapLayerAction(self.mapLayerActions[relation_id])
-        self.mapLayerActions = {}
+        for relation_id in self.map_layer_actions.keys():
+            # remove general actions
+            QgsGui.instance().mapLayerActionRegistry().removeMapLayerAction(self.map_layer_actions[relation_id])
+        self.map_layer_actions = {}
+        # remove legend context menu entries
+        for action in self.menu_actions:
+            self.iface.removeCustomActionForLayerType(action)
+        self.menu_actions = []
 
     def load_relations(self):
         self.unload_relations()
         for relation in QgsProject.instance().relationManager().relations().values():
-            action = QgsMapLayerAction('Add features in referencing layer "{layer}" for "relation "{rel}"'
-                                       .format(layer=relation.referencingLayer().name(), rel=relation.name()),
-                                       self.iface.mainWindow(),
-                                       relation.referencedLayer(),
-                                       QgsMapLayerAction.MultipleFeatures)
+            action = QgsMapLayerAction(
+                self.tr('Add features in referencing layer "{layer}" for "relation "{rel}"')
+                    .format(layer=relation.referencingLayer().name(), rel=relation.name()),
+                self.iface.mainWindow(),
+                relation.referencedLayer(),
+                QgsMapLayerAction.MultipleFeatures
+            )
             if DEBUG:
                 print('Adding action for relation "{}" in layer "{}"'.format(relation.name(), relation.referencedLayer().name()))
             QgsGui.instance().mapLayerActionRegistry().addMapLayerAction(action)
             action.triggeredForFeatures.connect(self.action_triggered)
-            self.mapLayerActions[relation.id()] = action
+            self.map_layer_actions[relation.id()] = action
+            # add legend context menu entry
+            action = QAction(
+                self.tr('Add features in "{referencing}" for the selected features in "{referenced}"')
+                    .format(referencing=relation.referencingLayer().name(), referenced=relation.referencedLayer().name()),
+                self.iface.mainWindow()
+            )
+            self.iface.addCustomActionForLayerType(action, None, QgsMapLayer.VectorLayer, False)
+            self.iface.addCustomActionForLayer(action, relation.referencedLayer())
+            action.triggered.connect(lambda: self.batch_insert(relation, relation.referencedLayer().selectedFeatures()))
+            self.menu_actions.append(action)
 
     def action_triggered(self, layer, features):
         sender_action = self.sender()
-        for relation_id, action in self.mapLayerActions.items():
+        for relation_id, action in self.map_layer_actions.items():
             if action == sender_action:
                 relation = QgsProject.instance().relationManager().relation(relation_id)
                 assert layer == relation.referencedLayer()
@@ -78,17 +98,27 @@ class RelationBatchInsertPlugin(QObject):
         """
         layer = relation.referencingLayer()
         if not layer.isEditable():
-            self.iface.messageBar().pushMessage('Relation Batch Insert',
-                                                self.tr('layer "{}" is not editable'.format(layer.name())))
+            self.iface.messageBar().pushMessage(
+                'Relation Batch Insert',
+                self.tr('layer "{layer}" is not editable'.format(layer=layer.name())), Qgis.Warning
+            )
+            return
 
         if len(features) < 1:
-            self.iface.messageBar().pushMessage('Relation Batch Insert',
-                                                self.tr('There is no features to batch insert for. Select some'))
+            self.iface.messageBar().pushMessage(
+                'Relation Batch Insert',
+                self.tr('There is no features to batch insert for. Select some in layer "{layer}" first.'
+                        .format(layer=relation.referencedLayer().name())
+                        ),
+                Qgis.Warning
+            )
+            return
 
         default_values = {}
         orignal_cfg = {}
         first_feature_created = False
         referencing_feature = QgsFeature()
+        features_written = 0
 
         for referenced_feature in features:
             # define values for the referencing field over the possible several field pairs
@@ -109,12 +139,24 @@ class RelationBatchInsertPlugin(QObject):
                 # show form for the feature with disabled widgets for the referencing fields
                 ok, referencing_feature = self.iface.vectorLayerTools().addFeature(layer, default_values, QgsGeometry())
                 if not ok:
-                    self.iface.messageBar().pushMessage('Relation Batch Insert',
-                                                        self.tr('There was an error while inserting features'))
+                    self.iface.messageBar().pushMessage(
+                        'Relation Batch Insert',
+                        self.tr('There was an error while inserting features, {count} features were written to {layer},'
+                                ' {expected_count}'.format(
+                            count=features_written, layer=layer.name(), expected_count=len(features))
+                        )
+                    )
                 # restore widget config of the layer
                 for index, cfg in orignal_cfg.items():
                     layer.setEditorWidgetSetup(index, cfg)
                 first_feature_created = True
             else:
                 layer.addFeature(referencing_feature)
+
+            features_written += 1
+
+        self.iface.messageBar().pushMessage(
+            'Relation Batch Insert',
+            self.tr('{count} features were written to {layer}'.format(count=features_written, layer=layer.name()))
+        )
 
