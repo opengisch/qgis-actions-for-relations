@@ -2,6 +2,7 @@ plugin_path: relation_batchinsert
 github_organization_slug: opengisch
 project_slug: qgis-relation-batchinsert
 
+transifex_coordinator: geoninja
 translation_languages:
   - fr
   - it
