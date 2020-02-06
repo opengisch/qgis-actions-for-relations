@@ -9,7 +9,7 @@
 # -----------------------------------------------------------
 
 import os
-from qgis.PyQt.QtCore import QCoreApplication, QTranslator, QObject, QLocale, QSettings
+from qgis.PyQt.QtCore import pyqtSlot, QCoreApplication, QTranslator, QObject, QLocale, QSettings
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import QgsProject, QgsRelation, QgsFeature, QgsEditorWidgetSetup, QgsGeometry, QgsMapLayer, Qgis
 from qgis.gui import QgsGui, QgisInterface, QgsMapLayerAction
@@ -71,7 +71,7 @@ class RelationBatchInsertPlugin(QObject):
             if DEBUG:
                 print('Adding action for relation "{}" in layer "{}"'.format(relation.name(), relation.referencedLayer().name()))
             QgsGui.instance().mapLayerActionRegistry().addMapLayerAction(action)
-            action.triggeredForFeatures.connect(self.action_triggered)
+            action.triggeredForFeatures.connect(self.map_layer_action_triggered)
             self.map_layer_actions[relation.id()] = action
             # add legend context menu entry
             action = QAction(
@@ -81,10 +81,19 @@ class RelationBatchInsertPlugin(QObject):
             )
             self.iface.addCustomActionForLayerType(action, None, QgsMapLayer.VectorLayer, False)
             self.iface.addCustomActionForLayer(action, relation.referencedLayer())
-            action.triggered.connect(lambda: self.batch_insert(relation, relation.referencedLayer().selectedFeatures()))
+            action.setData(relation.id())
+            action.triggered.connect(self.context_menu_triggered)
             self.menu_actions.append(action)
 
-    def action_triggered(self, layer, features):
+    @pyqtSlot()
+    def context_menu_triggered(self):
+        action = self.sender()
+        relation_id = action.data()
+        relation = QgsProject.instance().relationManager().relation(relation_id)
+        self.batch_insert(relation, relation.referencedLayer().selectedFeatures())
+
+    @pyqtSlot()
+    def map_layer_action_triggered(self, layer, features):
         sender_action = self.sender()
         for relation_id, action in self.map_layer_actions.items():
             if action == sender_action:
