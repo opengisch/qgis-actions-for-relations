@@ -28,7 +28,7 @@ class RelationBatchInsertPlugin(QObject):
         # context menu entries
         self.menu_actions = []
 
-        QgsProject.instance().relationManager().changed.connect(self.load_relations)
+        QgsProject.instance().relationManager().changed.connect(self.reload_relations)
         self.load_relations()
 
         # initialize translation
@@ -43,6 +43,10 @@ class RelationBatchInsertPlugin(QObject):
 
     def unload(self):
         self.unload_relations()
+
+    def reload_relations(self):
+        self.unload_relations()
+        self.load_relations()
 
     def unload_relations(self):
         for relation_id in self.map_layer_actions.keys():
