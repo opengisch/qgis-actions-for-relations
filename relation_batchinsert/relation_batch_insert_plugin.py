@@ -155,7 +155,7 @@ class RelationBatchInsertPlugin(QObject):
                     self.iface.messageBar().pushMessage(
                         'Relation Batch Insert',
                         self.tr('There was an error while inserting features, {count} features were written to {layer},'
-                                ' {expected_count}'.format(
+                                ' {expected_count} were expected.'.format(
                             count=features_written, layer=layer.name(), expected_count=len(features))
                         )
                     )
@@ -170,6 +170,6 @@ class RelationBatchInsertPlugin(QObject):
 
         self.iface.messageBar().pushMessage(
             'Relation Batch Insert',
-            self.tr('{count} features were written to {layer}'.format(count=features_written, layer=layer.name()))
+            self.tr('{count} features were written to "{layer}"'.format(count=features_written, layer=layer.name()))
         )
 
