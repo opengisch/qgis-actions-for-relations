@@ -29,6 +29,7 @@ class RelationBatchInsertPlugin(QObject):
         self.menu_actions = []
 
         QgsProject.instance().relationManager().changed.connect(self.reload_relations)
+
         self.load_relations()
 
         # initialize translation
@@ -68,40 +69,35 @@ class RelationBatchInsertPlugin(QObject):
                 relation.referencedLayer(),
                 QgsMapLayerAction.MultipleFeatures
             )
+            action.setData(relation.id())
             if DEBUG:
                 print('Adding action for relation "{}" in layer "{}"'.format(relation.name(), relation.referencedLayer().name()))
             QgsGui.instance().mapLayerActionRegistry().addMapLayerAction(action)
             action.triggeredForFeatures.connect(self.map_layer_action_triggered)
             self.map_layer_actions[relation.id()] = action
             # add legend context menu entry
-            action = QAction(
+            menu_action = QAction(
                 self.tr('Add features in "{referencing}" for the selected features in "{referenced}"')
                     .format(referencing=relation.referencingLayer().name(), referenced=relation.referencedLayer().name()),
                 self.iface.mainWindow()
             )
-            self.iface.addCustomActionForLayerType(action, None, QgsMapLayer.VectorLayer, False)
-            self.iface.addCustomActionForLayer(action, relation.referencedLayer())
-            action.setData(relation.id())
-            action.triggered.connect(self.context_menu_triggered)
-            self.menu_actions.append(action)
+            self.iface.addCustomActionForLayerType(menu_action, None, QgsMapLayer.VectorLayer, False)
+            self.iface.addCustomActionForLayer(menu_action, relation.referencedLayer())
+            menu_action.setData(relation.id())
+            menu_action.triggered.connect(self.context_menu_triggered)
+            self.menu_actions.append(menu_action)
 
     @pyqtSlot()
     def context_menu_triggered(self):
-        action = self.sender()
-        relation_id = action.data()
+        relation_id = self.sender().data()
         relation = QgsProject.instance().relationManager().relation(relation_id)
         self.batch_insert(relation, relation.referencedLayer().selectedFeatures())
 
-    @pyqtSlot()
     def map_layer_action_triggered(self, layer, features):
-        sender_action = self.sender()
-        for relation_id, action in self.map_layer_actions.items():
-            if action == sender_action:
-                relation = QgsProject.instance().relationManager().relation(relation_id)
-                assert layer == relation.referencedLayer()
-                self.batch_insert(relation, features)
-                return
-        assert False
+        relation_id = self.sender().data()
+        relation = QgsProject.instance().relationManager().relation(relation_id)
+        assert layer == relation.referencedLayer()
+        self.batch_insert(relation, features)
 
     def batch_insert(self, relation: QgsRelation, features: list):
         """
