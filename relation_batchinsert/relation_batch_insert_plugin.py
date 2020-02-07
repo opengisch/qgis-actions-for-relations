@@ -154,8 +154,9 @@ class RelationBatchInsertPlugin(QObject):
                 if not ok:
                     self.iface.messageBar().pushMessage(
                         'Relation Batch Insert',
-                        self.tr('There was an error while inserting features, {count} features were written to {layer},'
-                                ' {expected_count} were expected.'.format(
+                        self.tr('There was an error while inserting features, '
+                                '{count} features were written to "{layer}", '
+                                '{expected_count} were expected.'.format(
                             count=features_written, layer=layer.name(), expected_count=len(features))
                         )
                     )
