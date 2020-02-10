@@ -128,6 +128,7 @@ class RelationBatchInsertPlugin(QObject):
         first_feature_created = False
         referencing_feature = QgsFeature()
         features_written = 0
+        ok = True
 
         for referenced_feature in features:
             # define values for the referencing field over the possible several field pairs
@@ -148,25 +149,30 @@ class RelationBatchInsertPlugin(QObject):
                 # show form for the feature with disabled widgets for the referencing fields
                 ok, referencing_feature = self.iface.vectorLayerTools().addFeature(layer, default_values, QgsGeometry())
                 if not ok:
-                    self.iface.messageBar().pushMessage(
-                        'Relation Batch Insert',
-                        self.tr('There was an error while inserting features, '
-                                '{count} features were written to "{layer}", '
-                                '{expected_count} were expected.'.format(
-                            count=features_written, layer=layer.name(), expected_count=len(features))
-                        )
-                    )
+                    break
                 # restore widget config of the layer
                 for index, cfg in orignal_cfg.items():
                     layer.setEditorWidgetSetup(index, cfg)
                 first_feature_created = True
             else:
-                layer.addFeature(referencing_feature)
-
+                ok = layer.addFeature(referencing_feature)
+                if not ok:
+                    break
             features_written += 1
 
-        self.iface.messageBar().pushMessage(
-            'Relation Batch Insert',
-            self.tr('{count} features were written to "{layer}"'.format(count=features_written, layer=layer.name()))
-        )
+        if ok:
+            self.iface.messageBar().pushMessage(
+                'Relation Batch Insert',
+                self.tr('{count} features were written to "{layer}"'.format(count=features_written, layer=layer.name()))
+            )
+        else:
+            self.iface.messageBar().pushMessage(
+                'Relation Batch Insert',
+                self.tr('There was an error while inserting features, '
+                        '{count} features were written to "{layer}", '
+                        '{expected_count} were expected.'.format(
+                    count=features_written, layer=layer.name(), expected_count=len(features))
+                ),
+                Qgis.Critical
+            )
 
