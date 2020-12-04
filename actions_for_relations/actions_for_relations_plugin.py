@@ -92,7 +92,7 @@ class ActionsForRelationsPlugin(QObject):
         for relation in QgsProject.instance().relationManager().relations().values():
             # show children
             self.add_map_layer_action(
-                self.tr('Show referencing features in "{layer}" for "relation "{rel}"')
+                self.tr('Show referencing features in "{layer}" for relation "{rel}"')
                     .format(layer=relation.referencingLayer().name(), rel=relation.name()),
                 relation, self.show_children
             )
@@ -139,16 +139,15 @@ class ActionsForRelationsPlugin(QObject):
         if not layer.isEditable():
             self.iface.messageBar().pushMessage(
                 'Relation Batch Insert',
-                self.tr('layer "{layer}" is not editable'.format(layer=layer.name())), Qgis.Warning
+                self.tr('layer "{layer}" is not editable').format(layer=layer.name()), Qgis.Warning
             )
             return
 
         if len(features) < 1:
             self.iface.messageBar().pushMessage(
                 'Relation Batch Insert',
-                self.tr('There is no features to batch insert for. Select some in layer "{layer}" first.'
-                        .format(layer=relation.referencedLayer().name())
-                        ),
+                self.tr('There is no features to batch insert for. Select some in layer "{layer}" first.')
+                    .format(layer=relation.referencedLayer().name()),
                 Qgis.Warning
             )
             return
@@ -193,15 +192,17 @@ class ActionsForRelationsPlugin(QObject):
         if ok:
             self.iface.messageBar().pushMessage(
                 'Relation Batch Insert',
-                self.tr('{count} features were written to "{layer}"'.format(count=features_written, layer=layer.name()))
+                self.tr('{count} features were written to "{layer}"').format(count=features_written, layer=layer.name())
             )
         else:
             self.iface.messageBar().pushMessage(
                 'Relation Batch Insert',
                 self.tr('There was an error while inserting features, '
                         '{count} features were written to "{layer}", '
-                        '{expected_count} were expected.'.format(
-                    count=features_written, layer=layer.name(), expected_count=len(features))
+                        '{expected_count} were expected.').format(
+                    count=features_written,
+                    layer=layer.name(),
+                    expected_count=len(features)
                 ),
                 Qgis.Critical
             )
