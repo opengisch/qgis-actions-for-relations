@@ -52,7 +52,6 @@ class ActionsForRelationsPlugin(QObject):
         self.menu_action = QAction(self.tr('Set custom aggregate actions'), self.iface.mainWindow())
         self.menu_action.triggered.connect(self.set_aggregates)
         self.iface.addPluginToMenu(self.plugin_name, self.menu_action)
-        self.set_aggregates()
 
     def unload(self):
         self.unload_relations()
@@ -104,12 +103,19 @@ class ActionsForRelationsPlugin(QObject):
                     .format(referencing=relation.referencingLayer().name(), referenced=relation.referencedLayer().name()),
                 relation, self.batch_insert
             )
+            # add custom aggregates
+            for custom_aggregate in self.custom_aggregates:
+                if custom_aggregate.relation_id == relation.id():
+                    data = [custom_aggregate.aggregate, custom_aggregate.field]
+                    self.add_map_layer_action(custom_aggregate.title, relation, self.run_aggregate, data)
+                    self.add_layer_tree_action(custom_aggregate.title, relation, self.run_aggregate, data)
+                    break
 
-    def add_map_layer_action(self, title: str, relation: QgsRelation, slot) -> QgsMapLayerAction:
+    def add_map_layer_action(self, title: str, relation: QgsRelation, slot, data=None) -> QgsMapLayerAction:
 
         def layer_action_triggered(layer: QgsVectorLayer, features: [QgsFeature]):
             assert layer == relation.referencedLayer()
-            slot(relation, features)
+            slot(relation, features, data)
 
         action = QgsMapLayerAction(
             title,
@@ -124,16 +130,16 @@ class ActionsForRelationsPlugin(QObject):
         action.triggeredForFeatures.connect(layer_action_triggered)
         self.map_layer_actions.append(action)
 
-    def add_layer_tree_action(self, title: str, relation: QgsRelation, slot) -> QAction:
+    def add_layer_tree_action(self, title: str, relation: QgsRelation, slot, data=None) -> QAction:
         # add legend context menu entry
         layer_tree_action = QAction(title, self.iface.mainWindow())
         self.iface.addCustomActionForLayerType(layer_tree_action, None, QgsMapLayer.VectorLayer, False)
         self.iface.addCustomActionForLayer(layer_tree_action, relation.referencedLayer())
         layer_tree_action.setData(relation.id())
-        layer_tree_action.triggered.connect(lambda: slot(relation, relation.referencedLayer().selectedFeatures()))
+        layer_tree_action.triggered.connect(lambda: slot(relation, relation.referencedLayer().selectedFeatures(), data))
         self.layer_tree_actions.append(layer_tree_action)
 
-    def show_children(self, relation: QgsRelation, features: [QgsFeature]):
+    def show_children(self, relation: QgsRelation, features: [QgsFeature], data=None):
         """
         :param relation: the relation
         :param features: the list of feature on the referenced layer
@@ -149,7 +155,7 @@ class ActionsForRelationsPlugin(QObject):
         print(expression)
         self.iface.showAttributeTable(relation.referencingLayer(), expression)
 
-    def batch_insert(self, relation: QgsRelation, features: [QgsFeature]):
+    def batch_insert(self, relation: QgsRelation, features: [QgsFeature], data=None):
         """
         :param relation: the relation
         :param features: the list of feature on the referenced layer
@@ -226,6 +232,31 @@ class ActionsForRelationsPlugin(QObject):
                 ),
                 Qgis.Critical
             )
+
+    def run_aggregate(self, relation: QgsRelation, features: [QgsFeature], data=None):
+        conditions = []
+        for referencing, referenced in relation.fieldPairs().items():
+            break
+
+        field = relation.referencedLayer().fields().field(referenced)
+        quote = "" if field.isNumeric() else "'"
+
+        for feature in features:
+            base_condition = '{fk} = {quote}{parent_id}{quote}'.format(
+                fk=referencing,
+                parent_id=feature.attribute(referenced),
+                quote=quote,
+            )
+            condition = "( {filter} AND {field} = aggregate(layer:='{lyr}', aggregate:='{agg}', expression:={field}, filter:={filter}) )".format(
+                filter=base_condition,
+                field=data[1],
+                lyr=relation.referencingLayer().id(),
+                agg=data[0]
+            )
+            conditions.append(condition)
+        expression = ' OR '.join(conditions)
+        print(expression)
+        self.iface.showAttributeTable(relation.referencingLayer(), expression)
 
 
 
