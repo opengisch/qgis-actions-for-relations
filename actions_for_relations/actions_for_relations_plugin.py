@@ -17,7 +17,7 @@ from qgis.gui import QgsGui, QgisInterface, QgsMapLayerAction
 DEBUG = True
 
 
-class RelationBatchInsertPlugin(QObject):
+class ActionsForRelationsPlugin(QObject):
 
     plugin_name = "&Relation Batch Insert"
 

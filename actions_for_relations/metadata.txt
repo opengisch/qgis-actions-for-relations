@@ -1,0 +1,21 @@
+
+[general]
+name=Actions for relations
+qgisMinimumVersion=3.4
+description=Actions for relations (batch insert, show children)
+version=dev
+author=Denis Rouzaud
+email=denis@opengis.ch
+about=Show children or batch insert children on a layer selection
+
+tags=relation,action
+
+tracker=https://github.com/opengisch/qgis-action-for-relation/issues
+homepage=https://github.com/opengisch/qgis-action-for-relation
+repository=https://github.com/opengisch/qgis-action-for-relation
+
+category=Vector
+
+experimental=False
+
+icon=icon.svg
