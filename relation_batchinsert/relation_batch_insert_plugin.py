@@ -11,7 +11,7 @@
 import os
 from qgis.PyQt.QtCore import pyqtSlot, QCoreApplication, QTranslator, QObject, QLocale, QSettings
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsProject, QgsRelation, QgsFeature, QgsEditorWidgetSetup, QgsGeometry, QgsMapLayer, Qgis
+from qgis.core import QgsProject, QgsRelation, QgsFeature, QgsEditorWidgetSetup, QgsGeometry, QgsMapLayer, Qgis, QgsVectorLayer
 from qgis.gui import QgsGui, QgisInterface, QgsMapLayerAction
 
 DEBUG = True
@@ -24,7 +24,7 @@ class RelationBatchInsertPlugin(QObject):
     def __init__(self, iface: QgisInterface):
         QObject.__init__(self)
         self.iface = iface
-        self.map_layer_actions = {}
+        self.map_layer_actions = []
         # context menu entries
         self.menu_actions = []
 
@@ -50,54 +50,56 @@ class RelationBatchInsertPlugin(QObject):
         self.load_relations()
 
     def unload_relations(self):
-        for relation_id in self.map_layer_actions.keys():
+        for action in self.map_layer_actions:
             # remove general actions
-            QgsGui.instance().mapLayerActionRegistry().removeMapLayerAction(self.map_layer_actions[relation_id])
-        self.map_layer_actions = {}
+            QgsGui.instance().mapLayerActionRegistry().removeMapLayerAction(action)
+        self.map_layer_actions = []
         # remove legend context menu entries
         for action in self.menu_actions:
             self.iface.removeCustomActionForLayerType(action)
         self.menu_actions = []
 
+    def add_map_layer_action(self, title: str, relation: QgsRelation, slot) -> QgsMapLayerAction:
+
+        def layer_action_triggered(layer: QgsVectorLayer, features: [QgsFeature]):
+            assert layer == relation.referencedLayer()
+            slot(relation, features)
+
+        action = QgsMapLayerAction(
+            title,
+            self.iface.mainWindow(),
+            relation.referencedLayer(),
+            QgsMapLayerAction.MultipleFeatures
+        )
+        if DEBUG:
+            print('Adding insert action for relation "{}" in layer "{}"'.format(relation.name(),
+                                                                         relation.referencedLayer().name()))
+        QgsGui.instance().mapLayerActionRegistry().addMapLayerAction(action)
+        action.triggeredForFeatures.connect(layer_action_triggered)
+        self.map_layer_actions.append(action)
+
+    def add_layer_tree_action(self, title: str, relation: QgsRelation, slot) -> QAction:
+        # add legend context menu entry
+        layer_tree_action = QAction(title, self.iface.mainWindow())
+        self.iface.addCustomActionForLayerType(layer_tree_action, None, QgsMapLayer.VectorLayer, False)
+        self.iface.addCustomActionForLayer(layer_tree_action, relation.referencedLayer())
+        layer_tree_action.setData(relation.id())
+        layer_tree_action.triggered.connect(lambda: slot(relation, relation.referencedLayer().selectedFeatures()))
+        self.menu_actions.append(layer_tree_action)
+
     def load_relations(self):
         self.unload_relations()
         for relation in QgsProject.instance().relationManager().relations().values():
-            action = QgsMapLayerAction(
+            self.add_map_layer_action(
                 self.tr('Add features in referencing layer "{layer}" for "relation "{rel}"')
                     .format(layer=relation.referencingLayer().name(), rel=relation.name()),
-                self.iface.mainWindow(),
-                relation.referencedLayer(),
-                QgsMapLayerAction.MultipleFeatures
+                relation, self.batch_insert
             )
-            action.setData(relation.id())
-            if DEBUG:
-                print('Adding action for relation "{}" in layer "{}"'.format(relation.name(), relation.referencedLayer().name()))
-            QgsGui.instance().mapLayerActionRegistry().addMapLayerAction(action)
-            action.triggeredForFeatures.connect(self.map_layer_action_triggered)
-            self.map_layer_actions[relation.id()] = action
-            # add legend context menu entry
-            menu_action = QAction(
+            self.add_layer_tree_action(
                 self.tr('Add features in "{referencing}" for the selected features in "{referenced}"')
                     .format(referencing=relation.referencingLayer().name(), referenced=relation.referencedLayer().name()),
-                self.iface.mainWindow()
+                relation, self.batch_insert
             )
-            self.iface.addCustomActionForLayerType(menu_action, None, QgsMapLayer.VectorLayer, False)
-            self.iface.addCustomActionForLayer(menu_action, relation.referencedLayer())
-            menu_action.setData(relation.id())
-            menu_action.triggered.connect(self.context_menu_triggered)
-            self.menu_actions.append(menu_action)
-
-    @pyqtSlot()
-    def context_menu_triggered(self):
-        relation_id = self.sender().data()
-        relation = QgsProject.instance().relationManager().relation(relation_id)
-        self.batch_insert(relation, relation.referencedLayer().selectedFeatures())
-
-    def map_layer_action_triggered(self, layer, features):
-        relation_id = self.sender().data()
-        relation = QgsProject.instance().relationManager().relation(relation_id)
-        assert layer == relation.referencedLayer()
-        self.batch_insert(relation, features)
 
     def batch_insert(self, relation: QgsRelation, features: list):
         """
