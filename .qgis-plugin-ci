@@ -1,6 +1,6 @@
-plugin_path: relation_batchinsert
+plugin_path: actions_for_relaitons
 github_organization_slug: opengisch
-project_slug: qgis-relation-batchinsert
+project_slug: qgis-actions-for-relations
 
 transifex_coordinator: geoninja
 translation_languages:
