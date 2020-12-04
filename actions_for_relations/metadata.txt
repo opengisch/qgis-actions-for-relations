@@ -10,9 +10,9 @@ about=Show children or batch insert children on a layer selection
 
 tags=relation,action
 
-tracker=https://github.com/opengisch/qgis-action-for-relation/issues
-homepage=https://github.com/opengisch/qgis-action-for-relation
-repository=https://github.com/opengisch/qgis-action-for-relation
+tracker=https://github.com/opengisch/qgis-actions-for-relations/issues
+homepage=https://github.com/opengisch/qgis-actions-for-relations
+repository=https://github.com/opengisch/qgis-actions-for-relations
 
 category=Vector
 
