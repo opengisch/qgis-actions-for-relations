@@ -90,6 +90,18 @@ class RelationBatchInsertPlugin(QObject):
     def load_relations(self):
         self.unload_relations()
         for relation in QgsProject.instance().relationManager().relations().values():
+            # show children
+            self.add_map_layer_action(
+                self.tr('Show referencing features in "{layer}" for "relation "{rel}"')
+                    .format(layer=relation.referencingLayer().name(), rel=relation.name()),
+                relation, self.show_children
+            )
+            self.add_layer_tree_action(
+                self.tr('Show referencing features in "{referencing}" for the selected features in "{referenced}"')
+                    .format(referencing=relation.referencingLayer().name(), referenced=relation.referencedLayer().name()),
+                relation, self.show_children
+            )
+            # batch insert
             self.add_map_layer_action(
                 self.tr('Add features in referencing layer "{layer}" for "relation "{rel}"')
                     .format(layer=relation.referencingLayer().name(), rel=relation.name()),
@@ -101,7 +113,23 @@ class RelationBatchInsertPlugin(QObject):
                 relation, self.batch_insert
             )
 
-    def batch_insert(self, relation: QgsRelation, features: list):
+    def show_children(self, relation: QgsRelation, features: [QgsFeature]):
+        """
+        :param relation: the relation
+        :param features: the list of feature on the referenced layer
+        :return:
+        """
+        # works only for single key relation
+        for referencing, referenced in relation.fieldPairs().items():
+            break
+        expression = '{fk} IN ({parent_ids})'.format(
+            fk=referencing,
+            parent_ids=', '.join([str(f.attribute(referenced)) for f in features])
+        )
+        print(expression)
+        self.iface.showAttributeTable(relation.referencingLayer(), expression)
+
+    def batch_insert(self, relation: QgsRelation, features: [QgsFeature]):
         """
         :param relation: the relation
         :param features: the list of feature on the referenced layer
