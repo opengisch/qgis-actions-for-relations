@@ -1,9 +1,11 @@
-# QGIS Relation Batch Insert
+# QGIS Actions for relations
 
-This is a QGIS 3.4+ plugin allowing batch insert of features for relations.
-This requires to have the relations defined in the project properties.
+This is a QGIS 3.4+ plugin adding useful actions to enhance relations:
 
-## How to?
+* show children features of a selection of parent features
+* batch insert of children features
+
+## Batch insert
 1. Select some features in the referenced layer.
 2. Switch on the editing of the referencing layer.
 3. In the legend, in the context menu of the layer, click on the entry Add features in {referencing_layer} for the selected features in {referenced_layer}`
