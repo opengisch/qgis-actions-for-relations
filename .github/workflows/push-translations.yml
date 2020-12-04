@@ -24,4 +24,4 @@ jobs:
       run: pip3 install qgis-plugin-ci
 
     - name: Push translations
-      run: qgis-plugin-ci push-translation ${TX_TOKEN}
+      run: qgis-plugin-ci push-translation ${{ secrets.TX_TOKEN }}
