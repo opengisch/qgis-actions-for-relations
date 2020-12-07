@@ -44,6 +44,13 @@ class AggregateModel(QAbstractTableModel):
         self.custom_aggregates.append(CustomAggregate())
         self.endResetModel()
 
+    def remove_custom_aggregate(self, index: QModelIndex):
+        if not index.isValid():
+            return
+        self.beginRemoveRows(QModelIndex(), index.row(), index.row())
+        del self.custom_aggregates[index.row()]
+        self.endRemoveRows()
+
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...):
         if role == Qt.DisplayRole:
             if section == Column.TitleColumn.value:

@@ -10,7 +10,7 @@
 
 
 import os
-from qgis.PyQt.QtCore import QObject, QModelIndex
+from qgis.PyQt.QtCore import QObject, QModelIndex, pyqtSlot
 from qgis.PyQt.QtWidgets import QDialog, QStyledItemDelegate, QComboBox, QAbstractItemView, QHeaderView
 from qgis.PyQt.uic import loadUiType
 from qgis.core import QgsProject
@@ -103,6 +103,7 @@ class AggregatesDialog(QDialog, DialogUi):
         self.aggregate_table_view.setItemDelegateForColumn(Column.RelationColumn.value, RelationEditorDelegate(self))
         self.aggregate_table_view.setItemDelegateForColumn(Column.AggregateColumn.value, AggregateEditorDelegate(self))
         self.aggregate_table_view.setItemDelegateForColumn(Column.FieldColumn.value, FieldEditorDelegate(self))
+        self.aggregate_table_view.verticalHeader().hide()
         self.aggregate_table_view.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.aggregate_table_view.horizontalHeader().setStretchLastSection(True)
         self.aggregate_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -111,9 +112,23 @@ class AggregatesDialog(QDialog, DialogUi):
 
         self.accepted.connect(self.save_custom_aggregates)
         self.add_tool_button.clicked.connect(self.aggregate_model.add_custom_aggregate)
+        self.remove_tool_button.clicked.connect(self.remove_custom_aggregate)
+        self.aggregate_table_view.selectionModel().currentRowChanged.connect(self.on_selection_changed)
 
     def save_custom_aggregates(self):
         definitions = []
         for custom_aggregate in self.aggregate_model.custom_aggregates:
             definitions.append(custom_aggregate.as_dict())
         self.settings.set_value('custom_aggregates', definitions)
+
+    @pyqtSlot()
+    def remove_custom_aggregate(self):
+        selected_rows = self.aggregate_table_view.selectionModel().selectedRows()
+        if len(selected_rows):
+            self.aggregate_model.remove_custom_aggregate(selected_rows[0])
+
+    @pyqtSlot(QModelIndex)
+    def on_selection_changed(self, index: QModelIndex):
+        self.remove_tool_button.setEnabled(index.isValid())
+
+
