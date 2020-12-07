@@ -10,6 +10,11 @@ This is a QGIS 3.4+ plugin adding useful actions to enhance relations:
 2. In the layer tree, in the context menu of the layer (or from the attribute table context menu), click on the entry `Show referencing features in "{referencing}" for the selected features in "{referenced}"`.
 3. This will open the attribute table of the children features linked to the parent selected features.
 
+## Show children with custom aggregate
+
+It is possible to show children using a custom aggregate (min or max on a chosen field).
+Go to `Plugins -> Actions for Relations -> Define custom aggregates`.
+
 ## Batch insert
 1. Select some features in the referenced layer.
 2. Switch on the editing of the referencing layer.
