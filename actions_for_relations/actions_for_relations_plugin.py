@@ -145,6 +145,9 @@ class ActionsForRelationsPlugin(QObject):
         :param features: the list of feature on the referenced layer
         :return:
         """
+        if len(features) == 0:
+            return
+
         # works only for single key relation
         for referencing, referenced in relation.fieldPairs().items():
             break
@@ -152,7 +155,6 @@ class ActionsForRelationsPlugin(QObject):
             fk=referencing,
             parent_ids=', '.join([str(f.attribute(referenced)) for f in features])
         )
-        print(expression)
         self.iface.showAttributeTable(relation.referencingLayer(), expression)
 
     def batch_insert(self, relation: QgsRelation, features: [QgsFeature], data=None):
@@ -234,6 +236,9 @@ class ActionsForRelationsPlugin(QObject):
             )
 
     def run_aggregate(self, relation: QgsRelation, features: [QgsFeature], data=None):
+        if len(features) == 0:
+            return
+
         conditions = []
         for referencing, referenced in relation.fieldPairs().items():
             break
@@ -255,7 +260,6 @@ class ActionsForRelationsPlugin(QObject):
             )
             conditions.append(condition)
         expression = ' OR '.join(conditions)
-        print(expression)
         self.iface.showAttributeTable(relation.referencingLayer(), expression)
 
 
