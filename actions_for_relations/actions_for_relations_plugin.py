@@ -109,7 +109,6 @@ class ActionsForRelationsPlugin(QObject):
                     data = [custom_aggregate.aggregate, custom_aggregate.field]
                     self.add_map_layer_action(custom_aggregate.title, relation, self.run_aggregate, data)
                     self.add_layer_tree_action(custom_aggregate.title, relation, self.run_aggregate, data)
-                    break
 
     def add_map_layer_action(self, title: str, relation: QgsRelation, slot, data=None) -> QgsMapLayerAction:
 
