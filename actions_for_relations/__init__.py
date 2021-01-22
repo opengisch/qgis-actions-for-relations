@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------
 #
-# QGIS Relation Batch Insert Plugin
+# QGIS Actions for relations
 # Copyright (C) 2020 Denis Rouzaud
 #
 # licensed under the terms of GNU GPL 2
