@@ -10,8 +10,8 @@
 
 import os
 from qgis.PyQt.QtCore import pyqtSlot, QCoreApplication, QTranslator, QObject, QLocale, QSettings
-from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsProject, QgsRelation, QgsFeature, QgsEditorWidgetSetup, QgsGeometry, QgsMapLayer, Qgis, QgsVectorLayer
+from qgis.PyQt.QtWidgets import QAction, QMenu
+from qgis.core import QgsProject, QgsRelation, QgsFeature, QgsEditorWidgetSetup, QgsGeometry, QgsMapLayer, Qgis, QgsVectorLayer, QgsMapLayerType
 from qgis.gui import QgsGui, QgisInterface, QgsMapLayerAction
 from actions_for_relations.core.settings import Settings
 from actions_for_relations.core.custom_aggregate import CustomAggregate
@@ -37,7 +37,7 @@ class ActionsForRelationsPlugin(QObject):
         for definition in self.settings.value('custom_aggregates'):
             self.custom_aggregates.append(CustomAggregate(definition))
 
-        QgsProject.instance().relationManager().changed.connect(self.reload_relations)
+        QgsProject.instance().relationManager().changed.connect(self.load_relations)
 
         self.load_relations()
 
@@ -62,11 +62,7 @@ class ActionsForRelationsPlugin(QObject):
         dlg = AggregatesDialog(self.custom_aggregates)
         if dlg.exec_():
             self.custom_aggregates = dlg.aggregate_model.custom_aggregates
-            self.reload_relations()
-
-    def reload_relations(self):
-        self.unload_relations()
-        self.load_relations()
+            self.load_relations()
 
     def unload_relations(self):
         for action in self.map_layer_actions:
@@ -80,6 +76,54 @@ class ActionsForRelationsPlugin(QObject):
 
     def load_relations(self):
         self.unload_relations()
+
+        # Layer tree menu
+        for layer in QgsProject.instance().mapLayers().values():
+            if layer.type() != QgsMapLayerType.VectorLayer:
+                continue
+
+            relations = QgsProject.instance().relationManager().referencedRelations(layer)
+            if len(relations) == 0:
+                continue
+
+            menu_tree_main = QMenu(self.tr("Actions for relations"), self.iface.mainWindow())
+
+            menu_tree_show = QMenu(self.tr('Show referencing features for the selected features'), menu_tree_main)
+            menu_tree_add = QMenu(self.tr('Add referencing features for the selected features'), menu_tree_main)
+            menu_tree_custom = QMenu(self.tr('Custom aggregates'), menu_tree_main)
+
+            for relation in relations:
+                # show referencing features
+                title = self.tr('Show features in referencing layer "{referencing}"').format(
+                    referencing=relation.referencingLayer().name(), referenced=relation.referencedLayer().name()
+                )
+                self.create_menu_action(menu_tree_show, title, relation, self.show_children)
+                # batch insert
+                title = self.tr('Add features in referencing layer "{layer}"').format(
+                    layer=relation.referencingLayer().name(), rel=relation.name()
+                )
+                self.create_menu_action(menu_tree_add, title, relation, self.batch_insert)
+
+            # add custom aggregates
+            relation_ids = [relation.id() for relation in relations]
+            for custom_aggregate in self.custom_aggregates:
+                if custom_aggregate.relation_id in relation_ids:
+                    data = [custom_aggregate.aggregate, custom_aggregate.field]
+                    self.create_menu_action(menu_tree_custom, custom_aggregate.title, relation, self.run_aggregate, data)
+
+            menu_tree_main.addMenu(menu_tree_show)
+            menu_tree_main.addMenu(menu_tree_add)
+            if len(menu_tree_custom.actions()):
+                menu_tree_main.addMenu(menu_tree_custom)
+
+            menu_action = menu_tree_main.menuAction()
+
+            self.iface.addCustomActionForLayerType(menu_action, None, QgsMapLayer.VectorLayer, False)
+            self.iface.addCustomActionForLayer(menu_action, relation.referencedLayer())
+
+            self.layer_tree_actions.append(menu_action)
+
+        # Map layer actions
         for relation in QgsProject.instance().relationManager().relations().values():
             # show children
             self.add_map_layer_action(
@@ -87,20 +131,11 @@ class ActionsForRelationsPlugin(QObject):
                     .format(layer=relation.referencingLayer().name(), rel=relation.name()),
                 relation, self.show_children
             )
-            self.add_layer_tree_action(
-                self.tr('Show referencing features in "{referencing}" for the selected features in "{referenced}"')
-                    .format(referencing=relation.referencingLayer().name(), referenced=relation.referencedLayer().name()),
-                relation, self.show_children
-            )
+
             # batch insert
             self.add_map_layer_action(
                 self.tr('Add features in referencing layer "{layer}" for "relation "{rel}"')
                     .format(layer=relation.referencingLayer().name(), rel=relation.name()),
-                relation, self.batch_insert
-            )
-            self.add_layer_tree_action(
-                self.tr('Add features in "{referencing}" for the selected features in "{referenced}"')
-                    .format(referencing=relation.referencingLayer().name(), referenced=relation.referencedLayer().name()),
                 relation, self.batch_insert
             )
             # add custom aggregates
@@ -108,7 +143,6 @@ class ActionsForRelationsPlugin(QObject):
                 if custom_aggregate.relation_id == relation.id():
                     data = [custom_aggregate.aggregate, custom_aggregate.field]
                     self.add_map_layer_action(custom_aggregate.title, relation, self.run_aggregate, data)
-                    self.add_layer_tree_action(custom_aggregate.title, relation, self.run_aggregate, data)
 
     def add_map_layer_action(self, title: str, relation: QgsRelation, slot, data=None) -> QgsMapLayerAction:
 
@@ -129,14 +163,13 @@ class ActionsForRelationsPlugin(QObject):
         action.triggeredForFeatures.connect(layer_action_triggered)
         self.map_layer_actions.append(action)
 
-    def add_layer_tree_action(self, title: str, relation: QgsRelation, slot, data=None) -> QAction:
+    @staticmethod
+    def create_menu_action(parent_menu: QMenu, title: str, relation: QgsRelation, slot, data=None):
         # add legend context menu entry
-        layer_tree_action = QAction(title, self.iface.mainWindow())
-        self.iface.addCustomActionForLayerType(layer_tree_action, None, QgsMapLayer.VectorLayer, False)
-        self.iface.addCustomActionForLayer(layer_tree_action, relation.referencedLayer())
-        layer_tree_action.setData(relation.id())
-        layer_tree_action.triggered.connect(lambda: slot(relation, relation.referencedLayer().selectedFeatures(), data))
-        self.layer_tree_actions.append(layer_tree_action)
+        action = QAction(title, parent_menu)
+        action.setData(relation.id())
+        action.triggered.connect(lambda: slot(relation, relation.referencedLayer().selectedFeatures(), data))
+        parent_menu.addAction(action)
 
     def show_children(self, relation: QgsRelation, features: [QgsFeature], data=None):
         """
