@@ -152,7 +152,12 @@ class ActionsForRelationsPlugin(QObject):
             break
         expression = '{fk} IN ({parent_ids})'.format(
             fk=referencing,
-            parent_ids=', '.join([str(f.attribute(referenced)) for f in features])
+            parent_ids=', '.join(
+                ["{escape_referenced}{referenced}{escape_referenced}".format(
+                    referenced=str(f.attribute(referenced)),
+                    escape_referenced="'" if not relation.referencedLayer().fields().field(referenced).isNumeric() else ''
+                ) for f in features]
+            )
         )
         self.iface.showAttributeTable(relation.referencingLayer(), expression)
 
