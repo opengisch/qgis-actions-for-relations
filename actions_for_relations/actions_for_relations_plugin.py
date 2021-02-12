@@ -45,7 +45,7 @@ class ActionsForRelationsPlugin(QObject):
         qgis_locale = QLocale(QSettings().value('locale/userLocale'))
         locale_path = os.path.join(os.path.dirname(__file__), 'i18n')
         self.translator = QTranslator()
-        self.translator.load(qgis_locale, 'actions_for_relations', '_', locale_path)
+        self.translator.load(qgis_locale, 'qgis-actions-for-relations', '_', locale_path)
         QCoreApplication.installTranslator(self.translator)
 
     def initGui(self):
