@@ -5,8 +5,8 @@ qgisMinimumVersion=3.4
 qgisMaximumVersion=4.99
 description=Actions for relations (batch insert, show children)
 version=dev
-author=Denis Rouzaud
-email=denis@opengis.ch
+author=OPENGIS.ch
+email=info@opengis.ch
 about=Show children or batch insert children on a layer selection
 
 tags=relation,action
