@@ -1,3 +1,0 @@
-[submodule "actions_for_relations/setting_manager"]
-	path = actions_for_relations/setting_manager
-	url = git@github.com:opengisch/qgis_setting_manager.git

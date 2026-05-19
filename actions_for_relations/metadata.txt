@@ -1,7 +1,7 @@
 
 [general]
 name=Actions for relations
-qgisMinimumVersion=3.4
+qgisMinimumVersion=4.2
 qgisMaximumVersion=4.99
 description=Actions for relations (batch insert, show children)
 version=dev

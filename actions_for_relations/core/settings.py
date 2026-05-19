@@ -9,12 +9,9 @@
 # -----------------------------------------------------------
 
 
-from actions_for_relations.setting_manager import SettingManager, Scope, List
+from qgis.core import QgsSettingsEntryVariant
 
-pluginName = "actions_for_relations"
+from actions_for_relations import SETTINGS_NODE as _node
 
 
-class Settings(SettingManager):
-    def __init__(self):
-        SettingManager.__init__(self, pluginName)
-        self.add_setting(List("custom_aggregates", Scope.Global, []))
+custom_aggregates = QgsSettingsEntryVariant("custom_aggregates", _node, [])

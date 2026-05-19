@@ -24,7 +24,7 @@ from qgis.core import QgsProject
 from qgis.gui import QgsFieldComboBox
 from actions_for_relations.core.custom_aggregate import CustomAggregate
 from actions_for_relations.core.aggregate_model import AggregateModel, Role, Column
-from actions_for_relations.core.settings import Settings
+from actions_for_relations.core import settings
 
 
 DialogUi, _ = loadUiType(os.path.join(os.path.dirname(__file__), "../ui/aggregates.ui"))
@@ -105,7 +105,6 @@ class AggregatesDialog(QDialog, DialogUi):
         icons_dir = os.path.join(os.path.dirname(__file__), "..", "icons")
         self.add_tool_button.setIcon(QIcon(os.path.join(icons_dir, "add.png")))
         self.remove_tool_button.setIcon(QIcon(os.path.join(icons_dir, "remove.png")))
-        self.settings = Settings()
 
         self.aggregate_model = AggregateModel(custom_aggregates)
         self.aggregate_table_view.setModel(self.aggregate_model)
@@ -145,7 +144,7 @@ class AggregatesDialog(QDialog, DialogUi):
         definitions = []
         for custom_aggregate in self.aggregate_model.custom_aggregates:
             definitions.append(custom_aggregate.as_dict())
-        self.settings.set_value("custom_aggregates", definitions)
+        settings.custom_aggregates.setValue(definitions)
 
     @pyqtSlot()
     def remove_custom_aggregate(self):

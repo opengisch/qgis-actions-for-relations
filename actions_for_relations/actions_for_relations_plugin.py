@@ -23,7 +23,7 @@ from qgis.core import (
     QgsMapLayerType,
 )
 from qgis.gui import QgsGui, QgisInterface, QgsMapLayerAction
-from actions_for_relations.core.settings import Settings
+from actions_for_relations.core import settings
 from actions_for_relations.core.custom_aggregate import CustomAggregate
 from actions_for_relations.gui.aggregates_dialog import AggregatesDialog
 
@@ -36,14 +36,13 @@ class ActionsForRelationsPlugin(QObject):
     def __init__(self, iface: QgisInterface):
         QObject.__init__(self)
         self.iface = iface
-        self.settings = Settings()
         self.map_layer_actions = []
         # context menu entries
         self.layer_tree_actions = []
         self.menu_action = None
         self.custom_aggregates = []
 
-        for definition in self.settings.value("custom_aggregates"):
+        for definition in settings.custom_aggregates.value():
             self.custom_aggregates.append(CustomAggregate(definition))
 
         QgsProject.instance().relationManager().changed.connect(self.load_relations)
