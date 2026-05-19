@@ -16,5 +16,8 @@ def classFactory(iface):
     :type iface: QgsInterface
     """
     #
-    from actions_for_relations.actions_for_relations_plugin import ActionsForRelationsPlugin
+    from actions_for_relations.actions_for_relations_plugin import (
+        ActionsForRelationsPlugin,
+    )
+
     return ActionsForRelationsPlugin(iface)

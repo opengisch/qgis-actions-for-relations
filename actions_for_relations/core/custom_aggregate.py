@@ -16,17 +16,21 @@ class CustomAggregate(QObject):
     def __init__(self, definition: dict = {}):
         super(CustomAggregate, self).__init__()
         if not definition:
-            definition['title'] = self.tr('new custom aggregate')
-            relations = list(QgsProject.instance().relationManager().relations().values())
-            definition['aggregate'] = 'max'
+            definition["title"] = self.tr("new custom aggregate")
+            relations = list(
+                QgsProject.instance().relationManager().relations().values()
+            )
+            definition["aggregate"] = "max"
             if len(relations) > 0:
-                definition['relation_id'] = relations[0].id()
-                definition['field'] = relations[0].referencingLayer().fields().at(0).name()
+                definition["relation_id"] = relations[0].id()
+                definition["field"] = (
+                    relations[0].referencingLayer().fields().at(0).name()
+                )
 
-        self.relation_id = definition.get('relation_id')
-        self.title = definition.get('title')
-        self.aggregate = definition.get('aggregate')
-        self.field = definition.get('field')
+        self.relation_id = definition.get("relation_id")
+        self.title = definition.get("title")
+        self.aggregate = definition.get("aggregate")
+        self.field = definition.get("field")
 
     def relation(self):
         relation: QgsRelation = None
@@ -41,7 +45,7 @@ class CustomAggregate(QObject):
         if relation:
             return relation.name()
         else:
-            return ''
+            return ""
 
     def is_valid(self) -> bool:
         relation = self.relation()
@@ -53,8 +57,8 @@ class CustomAggregate(QObject):
 
     def as_dict(self):
         return {
-            'relation_id': self.relation_id,
-            'title': self.title,
-            'aggregate': self.aggregate,
-            'field': self.field,
+            "relation_id": self.relation_id,
+            "title": self.title,
+            "aggregate": self.aggregate,
+            "field": self.field,
         }

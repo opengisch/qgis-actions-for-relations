@@ -17,4 +17,4 @@ pluginName = "actions_for_relations"
 class Settings(SettingManager):
     def __init__(self):
         SettingManager.__init__(self, pluginName)
-        self.add_setting(List('custom_aggregates', Scope.Global, []))
+        self.add_setting(List("custom_aggregates", Scope.Global, []))

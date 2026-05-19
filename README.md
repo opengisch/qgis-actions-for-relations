@@ -20,4 +20,4 @@ Go to `Plugins -> Actions for Relations -> Define custom aggregates`.
 2. Switch on the editing of the referencing layer.
 3. In the layer tree, in the context menu of the layer (or from the attribute table context menu), click on the entry `Add features in {referencing_layer} for the selected features in {referenced_layer}`
 3. A form shows up to define attributes of the features to be created in the referencing layer (the referencing field(s) will not be shown since they are filled automatically).
-4. The plugin will automatically create as many features as there are features selected in the referenced layer. Each of them will point to one of the selected referenced features. 
+4. The plugin will automatically create as many features as there are features selected in the referenced layer. Each of them will point to one of the selected referenced features.

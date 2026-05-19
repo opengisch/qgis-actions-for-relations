@@ -54,13 +54,13 @@ class AggregateModel(QAbstractTableModel):
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...):
         if role == Qt.DisplayRole:
             if section == Column.TitleColumn.value:
-                return self.tr('Title')
+                return self.tr("Title")
             if section == Column.RelationColumn.value:
-                return self.tr('Relation')
+                return self.tr("Relation")
             if section == Column.AggregateColumn.value:
-                return self.tr('Aggregate')
+                return self.tr("Aggregate")
             if section == Column.FieldColumn.value:
-                return self.tr('Field')
+                return self.tr("Field")
 
         return None
 
@@ -92,7 +92,7 @@ class AggregateModel(QAbstractTableModel):
             return self.custom_aggregates[index.row()].relation_id
 
         if role == Role.AggregateRole.value:
-                return self.custom_aggregates[index.row()].aggregate
+            return self.custom_aggregates[index.row()].aggregate
 
         if role == Role.FieldRole.value:
             return self.custom_aggregates[index.row()].field
