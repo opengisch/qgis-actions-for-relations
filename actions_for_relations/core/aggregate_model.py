@@ -21,10 +21,10 @@ class Column(Enum):
 
 
 class Role(Enum):
-    RelationRole = Qt.UserRole + 1
-    RelationIdRole = Qt.UserRole + 2
-    AggregateRole = Qt.UserRole + 3
-    FieldRole = Qt.UserRole + 4
+    RelationRole = Qt.ItemDataRole.UserRole + 1
+    RelationIdRole = Qt.ItemDataRole.UserRole + 2
+    AggregateRole = Qt.ItemDataRole.UserRole + 3
+    FieldRole = Qt.ItemDataRole.UserRole + 4
 
 
 class AggregateModel(QAbstractTableModel):
@@ -52,7 +52,7 @@ class AggregateModel(QAbstractTableModel):
         self.endRemoveRows()
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = ...):
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             if section == Column.TitleColumn.value:
                 return self.tr("Title")
             if section == Column.RelationColumn.value:
@@ -65,14 +65,18 @@ class AggregateModel(QAbstractTableModel):
         return None
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
-        flags = Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+        flags = (
+            Qt.ItemFlag.ItemIsEnabled
+            | Qt.ItemFlag.ItemIsSelectable
+            | Qt.ItemFlag.ItemIsEditable
+        )
         return flags
 
     def data(self, index: QModelIndex, role: int = ...):
         if index.row() < 0 or index.row() >= self.rowCount(QModelIndex()):
             return None
 
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             if index.column() == Column.TitleColumn.value:
                 return self.custom_aggregates[index.row()].title
             if index.column() == Column.RelationColumn.value:
@@ -82,7 +86,10 @@ class AggregateModel(QAbstractTableModel):
             if index.column() == Column.FieldColumn.value:
                 return self.custom_aggregates[index.row()].field
 
-        if role == Qt.EditRole and index.column() == Column.TitleColumn.value:
+        if (
+            role == Qt.ItemDataRole.EditRole
+            and index.column() == Column.TitleColumn.value
+        ):
             return self.custom_aggregates[index.row()].title
 
         if role == Role.RelationRole.value:
@@ -99,7 +106,9 @@ class AggregateModel(QAbstractTableModel):
 
         return None
 
-    def setData(self, index: QModelIndex, value, role: int = Qt.EditRole) -> bool:
+    def setData(
+        self, index: QModelIndex, value, role: int = Qt.ItemDataRole.EditRole
+    ) -> bool:
         if index.row() < 0 or index.row() >= self.rowCount(QModelIndex()):
             return False
 

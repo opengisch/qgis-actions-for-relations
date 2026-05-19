@@ -73,7 +73,7 @@ class ActionsForRelationsPlugin(QObject):
 
     def set_aggregates(self):
         dlg = AggregatesDialog(self.custom_aggregates)
-        if dlg.exec_():
+        if dlg.exec():
             self.custom_aggregates = dlg.aggregate_model.custom_aggregates
             self.load_relations()
 
@@ -155,7 +155,7 @@ class ActionsForRelationsPlugin(QObject):
             menu_action = menu_tree_main.menuAction()
 
             self.iface.addCustomActionForLayerType(
-                menu_action, None, QgsMapLayer.VectorLayer, False
+                menu_action, None, QgsMapLayer.LayerType.VectorLayer, False
             )
             self.iface.addCustomActionForLayer(menu_action, relation.referencedLayer())
 
@@ -199,7 +199,7 @@ class ActionsForRelationsPlugin(QObject):
             title,
             self.iface.mainWindow(),
             relation.referencedLayer(),
-            QgsMapLayerAction.MultipleFeatures,
+            QgsMapLayerAction.Target.MultipleFeatures,
         )
         if DEBUG:
             print(
@@ -265,7 +265,7 @@ class ActionsForRelationsPlugin(QObject):
             self.iface.messageBar().pushMessage(
                 "Relation Batch Insert",
                 self.tr('layer "{layer}" is not editable').format(layer=layer.name()),
-                Qgis.Warning,
+                Qgis.MessageLevel.Warning,
             )
             return
 
@@ -275,7 +275,7 @@ class ActionsForRelationsPlugin(QObject):
                 self.tr(
                     'There is no features to batch insert for. Select some in layer "{layer}" first.'
                 ).format(layer=relation.referencedLayer().name()),
-                Qgis.Warning,
+                Qgis.MessageLevel.Warning,
             )
             return
 
@@ -349,7 +349,7 @@ class ActionsForRelationsPlugin(QObject):
                     layer=layer.name(),
                     expected_count=len(features),
                 ),
-                Qgis.Critical,
+                Qgis.MessageLevel.Critical,
             )
 
     def run_aggregate(self, relation: QgsRelation, features: [QgsFeature], data=None):

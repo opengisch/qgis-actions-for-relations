@@ -11,6 +11,7 @@
 
 import os
 from qgis.PyQt.QtCore import QObject, QModelIndex, pyqtSlot
+from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import (
     QDialog,
     QStyledItemDelegate,
@@ -101,6 +102,9 @@ class AggregatesDialog(QDialog, DialogUi):
     def __init__(self, custom_aggregates: [CustomAggregate], parent=None):
         QDialog.__init__(self, parent)
         self.setupUi(self)
+        icons_dir = os.path.join(os.path.dirname(__file__), "..", "icons")
+        self.add_tool_button.setIcon(QIcon(os.path.join(icons_dir, "add.png")))
+        self.remove_tool_button.setIcon(QIcon(os.path.join(icons_dir, "remove.png")))
         self.settings = Settings()
 
         self.aggregate_model = AggregateModel(custom_aggregates)
@@ -117,12 +121,18 @@ class AggregatesDialog(QDialog, DialogUi):
         )
         self.aggregate_table_view.verticalHeader().hide()
         self.aggregate_table_view.horizontalHeader().setSectionResizeMode(
-            QHeaderView.ResizeToContents
+            QHeaderView.ResizeMode.ResizeToContents
         )
         self.aggregate_table_view.horizontalHeader().setStretchLastSection(True)
-        self.aggregate_table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.aggregate_table_view.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.aggregate_table_view.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.aggregate_table_view.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self.aggregate_table_view.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
+        self.aggregate_table_view.setEditTriggers(
+            QAbstractItemView.EditTrigger.DoubleClicked
+        )
 
         self.accepted.connect(self.save_custom_aggregates)
         self.add_tool_button.clicked.connect(self.aggregate_model.add_custom_aggregate)
